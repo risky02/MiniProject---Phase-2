@@ -8,6 +8,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
+	"gopkg.in/mail.v2"
 	"gorm.io/gorm"
 )
 
@@ -75,13 +76,37 @@ func (dbUser UserDB) Register(c echo.Context) error {
 			Code:    http.StatusInternalServerError,
 			Message: "Gagal menyimpan ke database",
 		})
-	} else {
-		return c.JSON(http.StatusCreated, dto.ResponSuccess{
-			Code:    http.StatusCreated,
-			Message: "Registrasi Berhasil",
-			Data:    newRegister,
+	} 
+	
+	sendMailRegister()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, dto.ResponFailed{
+			Code:    http.StatusInternalServerError,
+			Message: "Gagal mengirim email",
 		})
 	}
+	
+	return c.JSON(http.StatusCreated, dto.ResponSuccess{
+		Code:    http.StatusCreated,
+		Message: "Registrasi Berhasil",
+		Data:    newRegister,
+	})
+}
+
+func sendMailRegister() error {
+	m := mail.NewMessage()
+	m.SetHeader("From", "methalouis01@gmail.com")
+	m.SetHeader("To", "methalouis02@gmail.com")
+	m.SetHeader("Subject", "Registrasi Sukses")
+	m.SetBody("text/html", "Hello,<br>Registrasi Anda berhasil.")
+
+	d := mail.NewDialer("smtp.gmail.com", 587, "methalouis01@gmail.com", "wcovkgurvelzewpz")
+
+	if err := d.DialAndSend(m); err != nil {
+        return err
+    }
+
+    return nil
 }
 
 func (dbUser UserDB) Login(c echo.Context) error {
