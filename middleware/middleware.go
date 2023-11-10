@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"Phase2/entity"
 	"fmt"
 	"net/http"
 
@@ -10,15 +11,15 @@ import (
 )
 
 
-type UserDB struct {
+type middlewareDB struct {
 	DB *gorm.DB
 }
 
-func NewUserDB(db *gorm.DB) UserDB {
-	return UserDB{DB: db}
+func NewAuthDB(db *gorm.DB) middlewareDB {
+	return middlewareDB{DB: db}
 }
 
-func (udb UserDB) Authenticate(next echo.HandlerFunc) echo.HandlerFunc {
+func (authDB middlewareDB) Authenticate(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		authToken := c.Request().Header.Get("Authorization")
 		if authToken == "" {
@@ -40,19 +41,19 @@ func (udb UserDB) Authenticate(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-			userID, ok := claims["id"].(int)
+			userID, ok := claims["id"].(float64)
 			if !ok {
 				return echo.NewHTTPError(http.StatusUnauthorized, "Invalid user ID in token")
 			}
-			var user int
-			if err := udb.DB.Where("id = ?", int(userID)).First(&user).Error; err != nil {
+			var user entity.User
+			if err := authDB.DB.Where("id = ?", int(userID)).First(&user).Error; err != nil {
 				return echo.NewHTTPError(http.StatusInternalServerError, "Error fetching user data")
 			}
 
 			// Set user data to the context
 			c.Set("user", user)
+			
 		}
-
-		return c.JSON(http.StatusUnauthorized, "Please login to Access this page")
+		return next(c)
 	}
 }

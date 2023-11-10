@@ -5,9 +5,11 @@ import (
 	"Phase2/entity"
 	"Phase2/helper"
 	"net/http"
+	"os"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
+
 	"gopkg.in/mail.v2"
 	"gorm.io/gorm"
 )
@@ -95,12 +97,12 @@ func (dbUser UserDB) Register(c echo.Context) error {
 
 func sendMailRegister() error {
 	m := mail.NewMessage()
-	m.SetHeader("From", "methalouis01@gmail.com")
-	m.SetHeader("To", "methalouis02@gmail.com")
+	m.SetHeader("From", os.Getenv("FROM_EMAIL"))
+	m.SetHeader("To", os.Getenv("TO"))
 	m.SetHeader("Subject", "Registrasi Sukses")
 	m.SetBody("text/html", "Hello,<br>Registrasi Anda berhasil.")
 
-	d := mail.NewDialer("smtp.gmail.com", 587, "methalouis01@gmail.com", "wcovkgurvelzewpz")
+	d := mail.NewDialer("smtp.gmail.com", 587, os.Getenv("FROM_EMAIL"), os.Getenv("SECRETKEY"))
 
 	if err := d.DialAndSend(m); err != nil {
         return err
@@ -110,7 +112,7 @@ func sendMailRegister() error {
 }
 
 func (dbUser UserDB) Login(c echo.Context) error {
-	loginReq := dto.UserLogin{}
+	loginReq := dto.User{}
 	if err := c.Bind(&loginReq); err != nil {
 		return c.JSON(http.StatusBadRequest, dto.ResponFailed{
 			Code: http.StatusBadRequest,
@@ -118,7 +120,7 @@ func (dbUser UserDB) Login(c echo.Context) error {
 		})
 	}
 
-	var loginUser entity.User
+	loginUser := entity.User{}
 	result := dbUser.DB.Where("email = ?", loginReq.Email).First(&loginUser)
 	if result.RowsAffected == 0 {
 		return c.JSON(http.StatusBadRequest, dto.ResponFailed{
@@ -128,10 +130,10 @@ func (dbUser UserDB) Login(c echo.Context) error {
 	}
 
 	passwordCorrect := helper.CheckHashPassword(loginReq.Password, loginUser.Password)
-	if passwordCorrect {
+	if !passwordCorrect {
 		return c.JSON(http.StatusBadRequest, dto.ResponFailed{
 			Code: http.StatusBadRequest,
-			Message: "Email atau password anda salah",
+			Message: "Email atau password anda salah(2)",
 		})
 	}
 

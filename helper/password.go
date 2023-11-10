@@ -11,8 +11,8 @@ func HashedPassword(pass string) (string, error)  {
 }
 
 func CheckHashPassword(pass, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(pass))
-	return err == nil
+    err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(pass))
+    return err == nil
 }
 
 func GenerateToken(claims jwt.MapClaims) (string, error) {

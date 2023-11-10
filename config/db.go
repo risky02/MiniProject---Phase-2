@@ -1,6 +1,7 @@
 package config
 
 import (
+	"Phase2/entity"
 	"log"
 	"os"
 
@@ -9,7 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func InitDB() *gorm.DB {
+func InitDB() (*gorm.DB, error) {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error Load file ENV")
@@ -20,10 +21,11 @@ func InitDB() *gorm.DB {
 	if err != nil {
 		log.Fatal("Error Database")
 	}
-	
-	// if err := db.AutoMigrate(&entity.User{})
-	// err != nil {
-    //     return nil, err
-    // }
-	return db
+
+	err = db.AutoMigrate(&entity.User{}, &entity.Checkout{}, &entity.Payment{}, &entity.Equipment{})
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
 }
